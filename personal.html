@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Husholdning — Personal Finance Dashboard 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:24px}
+  h1{font-size:1.5rem;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .card h3{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .big{font-size:1.6rem;font-weight:700}
+  .green{color:var(--green)}.red{color:var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:6px}
+  th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase}
+  td{padding:8px 10px;border-bottom:1px solid #21262d}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .chartbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<h1>🏠 Husholdning — 2025/2026</h1>
+<div class="sub">Personal finance · card consumption & interest · updated <span id="gen"></span></div>
+
+<div class="grid">
+  <div class="card"><h3>Card consumption (known months)</h3><div class="big" id="k-cons">—</div></div>
+  <div class="card"><h3>Credit-card interest paid</h3><div class="big" id="k-int">—</div></div>
+  <div class="card"><h3>Avg monthly burn (cards)</h3><div class="big" id="k-avg">—</div></div>
+  <div class="card"><h3>Interest target</h3><div class="big green">0 kr</div></div>
+</div>
+
+<div class="chartbox"><canvas id="monChart" height="100"></canvas></div>
+
+<div class="chartbox">
+<h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">MONTHLY CARD SUMMARY</h3>
+<table id="tbl"><thead><tr><th>Month</th><th class="num">SAS card</th><th class="num">SAS interest</th><th class="num">Bank Norw.</th><th class="num">BN interest</th><th class="num">Known total</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="chartbox" style="color:var(--muted);font-size:.85rem;line-height:1.7" id="read"></div>
+
+<script src="auth.js"></script>
+<script>
+(async()=>{
+const D = await unlockData('personal.enc');
+document.getElementById('gen').textContent = D.generated;
+function fmt(n){return n.toLocaleString('nb-NO',{maximumFractionDigits:0})+' kr'}
+
+const cons = D.months.reduce((s,m)=>s+m.total,0);
+const interest = D.months.reduce((s,m)=>s+(m.sas_int||0)+(m.bn_int||0),0);
+document.getElementById('k-cons').textContent = fmt(cons);
+document.getElementById('k-int').textContent = fmt(interest);
+document.getElementById('k-int').className = 'big ' + (interest>0?'red':'green');
+document.getElementById('k-avg').textContent = fmt(cons/D.months.length);
+
+new Chart(document.getElementById('monChart'),{type:'bar',data:{
+ labels:D.months.map(m=>m.month),
+ datasets:[
+  {label:'SAS card',data:D.months.map(m=>m.sas||0),backgroundColor:'#58a6ff',borderRadius:3},
+  {label:'Bank Norwegian',data:D.months.map(m=>m.bn||0),backgroundColor:'#d29922',borderRadius:3}]},
+ options:{plugins:{legend:{labels:{color:'#8b949e'}}},scales:{x:{stacked:true,ticks:{color:'#8b949e'},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v),color:'#8b949e'},grid:{color:'#21262d'}}}}});
+
+const tb=document.querySelector('#tbl tbody');
+D.months.forEach(m=>{
+ tb.innerHTML+=`<tr><td>${m.month}</td><td class="num">${fmt(m.sas||0)}</td><td class="num ${m.sas_int?'red':''}">${fmt(m.sas_int||0)}</td><td class="num">${fmt(m.bn||0)}</td><td class="num ${m.bn_int?'red':''}">${fmt(m.bn_int||0)}</td><td class="num"><strong>${fmt(m.total)}</strong></td></tr>`;
+});
+document.getElementById('read').innerHTML = D.narrative;
+})();
+</script>
+</body>
+</html>

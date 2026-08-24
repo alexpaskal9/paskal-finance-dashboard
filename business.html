@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fornvegr ENK — Business Dashboard 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:24px}
+  h1{font-size:1.5rem;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .card h3{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .big{font-size:1.6rem;font-weight:700}
+  .green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:800px){.row2{grid-template-columns:1fr}}
+  .chartbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase}
+  td{padding:8px 10px;border-bottom:1px solid #21262d}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .assets li{margin:6px 0 6px 18px;font-size:.92rem}
+</style>
+</head>
+<body>
+<h1>🪙 Fornvegr ENK — 2026</h1>
+<div class="sub">Business dashboard · auto-generated from expenses/income/assets registers · updated <span id="gen"></span></div>
+
+<div class="grid">
+  <div class="card"><h3>Flagged costs YTD</h3><div class="big" id="k-exp">—</div></div>
+  <div class="card"><h3>Registered income YTD</h3><div class="big" id="k-inc">—</div></div>
+  <div class="card"><h3>Fixed assets</h3><div class="big" id="k-assets">—</div></div>
+  <div class="card"><h3>MVA threshold (50k)</h3><div class="big" id="k-mva">—</div></div>
+</div>
+
+<div class="chartbox"><canvas id="catChart" height="90"></canvas></div>
+
+<div class="row2">
+  <div class="chartbox"><h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">MONTHLY BUSINESS SPEND</h3><canvas id="monChart" height="180"></canvas></div>
+  <div class="chartbox">
+    <h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">FIXED ASSETS (depreciable)</h3>
+    <ul class="assets" id="assetList"></ul>
+  </div>
+</div>
+
+<div class="chartbox">
+  <h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">ALL FLAGGED EXPENSES</h3>
+  <table id="exptable"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th class="num">NOK</th></tr></thead><tbody></tbody></table>
+</div>
+
+<script src="auth.js"></script>
+<script>
+(async()=>{
+const DATA = await unlockData('business.enc');
+document.getElementById('gen').textContent = DATA.generated;
+
+// KPIs
+const expTotal = DATA.expenses.reduce((s,r)=>s+r.amount,0);
+const incTotal = DATA.income.reduce((s,r)=>s+r.gross,0);
+const assetTotal = DATA.assets.reduce((s,r)=>s+r.cost,0);
+document.getElementById('k-exp').textContent = fmt(expTotal);
+document.getElementById('k-inc').textContent = fmt(incTotal) || '0';
+document.getElementById('k-inc').className = 'big ' + (incTotal>0?'green':'');
+document.getElementById('k-assets').textContent = fmt(assetTotal);
+const mvaEl = document.getElementById('k-mva');
+if (incTotal >= 50000){ mvaEl.textContent='BREACHED — register!'; mvaEl.className='big red'; }
+else { const pct=Math.round(incTotal/50000*100); mvaEl.textContent=pct+'% of 50k'; mvaEl.className='big yellow'; }
+
+function fmt(n){return n.toLocaleString('nb-NO',{maximumFractionDigits:0})+' kr'}
+
+// Category donut
+const cats={}; DATA.expenses.forEach(r=>cats[r.category]=(cats[r.category]||0)+r.amount);
+new Chart(document.getElementById('catChart'),{type:'bar',data:{
+ labels:Object.keys(cats),
+ datasets:[{label:'NOK',data:Object.values(cats),backgroundColor:'#58a6ff',borderRadius:4}]},
+ options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmt(v),color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#e6edf3'},grid:{display:false}}}}});
+
+// Monthly bars
+const mons={}; DATA.expenses.forEach(r=>{const m=r.date.slice(0,7);mons[m]=(mons[m]||0)+r.amount});
+const mkeys=Object.keys(mons).sort();
+new Chart(document.getElementById('monChart'),{type:'bar',data:{
+ labels:mkeys,datasets:[{data:mkeys.map(m=>mons[m]),backgroundColor:'#3fb950',borderRadius:4}]},
+ options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v),color:'#8b949e'},grid:{color:'#21262d'}},x:{ticks:{color:'#8b949e'},grid:{display:false}}}}});
+
+// Assets list
+const ul=document.getElementById('assetList');
+DATA.assets.forEach(a=>{ul.innerHTML+=`<li>${a.asset} — <strong>${fmt(a.cost)}</strong> <span style="color:var(--muted)">(${a.date}, ${a.depreciation_years}-yr)</span></li>`});
+
+// Expense table
+const tb=document.querySelector('#exptable tbody');
+[...DATA.expenses].sort((a,b)=>b.date.localeCompare(a.date)).forEach(r=>{
+ tb.innerHTML+=`<tr><td>${r.date}</td><td>${r.description}</td><td style="color:var(--muted)">${r.category}</td><td class="num">${fmt(r.amount)}</td></tr>`;
+});
+})();
+</script>
+</body>
+</html>
