@@ -42,6 +42,7 @@ tfoot td{font-weight:700;border-top:1px solid var(--border)}
 .read{color:#c9d1d9;font-size:.88rem;line-height:1.8}
 .read strong{color:var(--text)}
 .legend-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.search{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);font-size:.85rem;outline:none}.search:focus{border-color:var(--accent)}.cat-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:600;white-space:nowrap}#slice-grid>*{min-width:0}.table-scroll{overflow-x:auto;width:100%}#txntbl{min-width:760px}@media(max-width:760px){#slice-grid{grid-template-columns:1fr!important}}
 footer{text-align:center;color:#59626e;font-size:.72rem;margin-top:34px;letter-spacing:.04em}
 </style>
 </head>
@@ -71,6 +72,22 @@ footer{text-align:center;color:#59626e;font-size:.72rem;margin-top:34px;letter-s
   </div>
 </div>
 
+
+<div class="panel">
+  <div class="ph"><span>WHERE THE MONEY GOES — BY CATEGORY</span><span style="text-transform:none;letter-spacing:0" id="slice-total"></span></div>
+  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px" id="slice-grid">
+    <div style="position:relative;height:330px;min-width:0"><canvas id="catChart"></canvas></div>
+    <div>
+      <input class="search" id="slice-q" type="search" placeholder="Filter categories…" style="margin-bottom:8px">
+      <div id="cat-list" style="max-height:260px;overflow:auto"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px">
+    <div class="ph"><span>TRANSACTIONS <span id="txn-count" style="text-transform:none;letter-spacing:0"></span></span><span id="txn-filter-info" style="text-transform:none;letter-spacing:0"></span></div>
+    <select id="monthSel" class="search" style="width:180px;margin-bottom:10px"><option value="">All months</option></select>
+    <div class="table-scroll"><table id="txntbl"><thead><tr><th>Date</th><th>Merchant</th><th>Card</th><th>Category</th><th class="num">NOK</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
 <div class="panel read" id="read"></div>
 <footer>AES-256-GCM · passphrase never leaves this device · Frøya / household money ops</footer>
 
@@ -128,6 +145,61 @@ document.querySelector('#tbl tfoot').innerHTML=`<tr><td>TOTAL</td><td class="num
 new Chart(document.getElementById('sp-cons'),{type:'line',data:{labels:D.months.map(m=>m.month),datasets:[{data:D.months.map(m=>m.total),borderColor:'#a78bfa',borderWidth:2,pointRadius:0,fill:true,tension:.4}]},options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});
 
 document.getElementById('read').innerHTML=D.narrative;
+
+// ---- Category slicing ----
+const TX=D.transactions||[];
+const CAT_COLORS=['#a78bfa','#2dd4bf','#fbbf24','#fb7185','#34d399','#60a5fa','#f472b6','#c084fc','#4ade80','#f97316','#38bdf8','#e879f9','#facc15','#2dd4bf','#a3e635'];
+let activeCats=new Set(),activeMonth='';
+const catAgg={};TX.forEach(t=>catAgg[t.category]=(catAgg[t.category]||0)+t.amount);
+const catsSorted=Object.keys(catAgg).sort((a,b)=>catAgg[b]-catAgg[a]);
+const txTotal=catsSorted.reduce((s,c)=>s+catAgg[c],0);
+document.getElementById('slice-total').textContent='total '+fmt(txTotal)+' · '+TX.length+' transaksjoner';
+
+function dateKey(d){const p=d.split('.');return '20'+p[2]+'-'+p[1]+'-'+p[0];}
+function monthOf(d){return dateKey(d).slice(0,7);}
+function cleanMerchant(s){return s.replace(/\s+\d{6}\*+\d{4}.*$/,'').replace(/\s+-?\d+[.,]\d{2} [A-Z]{3}.*$/,'').trim();}
+const monthsSet=[...new Set(TX.map(t=>monthOf(t.date)))].sort();
+monthsSet.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;document.getElementById('monthSel').appendChild(o);});
+
+let catChart;
+function filteredTx(){
+ const q=document.getElementById('slice-q').value.toLowerCase();
+ return TX.filter(t=>(!activeCats.size||activeCats.has(t.category))&&(!activeMonth||monthOf(t.date)===activeMonth)&&(!q||t.category.toLowerCase().includes(q)));
+}
+function renderSlice(){
+ const ft=filteredTx();
+ const agg={};ft.forEach(t=>agg[t.category]=(agg[t.category]||0)+t.amount);
+ const keys=Object.keys(agg).sort((a,b)=>agg[b]-agg[a]);
+ const col=k=>CAT_COLORS[catsSorted.indexOf(k)%CAT_COLORS.length];
+ if(catChart)catChart.destroy();
+ catChart=new Chart(document.getElementById('catChart'),{type:'bar',data:{
+  labels:keys,datasets:[{data:keys.map(k=>agg[k]),backgroundColor:keys.map(col),borderRadius:7,maxBarThickness:24}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)+' ('+(c.raw/txTotal*100).toFixed(1)+'% av totalt)'}}},
+  scales:{x:{ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#c9d1d9',font:{weight:600}},grid:{display:false}}}}});
+ // list with toggles
+ document.getElementById('cat-list').innerHTML=catsSorted.map(c=>{
+  const on=!activeCats.size||activeCats.has(c);
+  const dim=activeCats.size&&!activeCats.has(c);
+  return `<div class="catrow" data-cat="${c}" style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:9px;cursor:pointer;opacity:${dim?'.35':'1'};background:${on&&activeCats.has(c)?'rgba(167,139,250,.12)':'transparent'}">
+   <span><span class="legend-swatch" style="background:${col(c)}"></span>${c}</span>
+   <strong style="font-variant-numeric:tabular-nums">${fmt((catAgg[c]||0))}</strong></div>`;
+ }).join('');
+ document.querySelectorAll('.catrow').forEach(el=>el.addEventListener('click',()=>{
+  const c=el.dataset.cat;
+  if(activeCats.has(c))activeCats.delete(c);else activeCats.add(c);
+  if(activeCats.size===catsSorted.length)activeCats.clear();
+  renderSlice();
+ }));
+ // transactions
+ document.getElementById('txn-count').textContent=`· ${ft.length}`;
+ document.getElementById('txn-filter-info').textContent=fmt(ft.reduce((s,t)=>s+t.amount,0));
+ document.querySelector('#txntbl tbody').innerHTML=[...ft].sort((a,b)=>dateKey(b.date).localeCompare(dateKey(a.date))||b.amount-a.amount).slice(0,400).map(t=>
+  `<tr><td style="color:var(--muted);white-space:nowrap">${t.date}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanMerchant(t.desc)}</td><td style="color:var(--muted)">${t.source}</td><td><span class="cat-chip" style="background:${col(t.category)}22;color:${col(t.category)}">${t.category}</span></td><td class="num">${fmt(t.amount)}</td></tr>`).join('');
+}
+document.getElementById('slice-q').addEventListener('input',renderSlice);
+document.getElementById('monthSel').addEventListener('change',e=>{activeMonth=e.target.value;renderSlice();});
+renderSlice();
+
 })();
 </script>
 </body>
