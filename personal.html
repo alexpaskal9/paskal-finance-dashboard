@@ -82,11 +82,22 @@ footer{text-align:center;color:#59626e;font-size:.72rem;margin-top:34px;letter-s
       <div id="cat-list" style="max-height:260px;overflow:auto"></div>
     </div>
   </div>
-  <div style="margin-top:16px">
-    <div class="ph"><span>TRANSACTIONS <span id="txn-count" style="text-transform:none;letter-spacing:0"></span></span><span id="txn-filter-info" style="text-transform:none;letter-spacing:0"></span></div>
-    <select id="monthSel" class="search" style="width:180px;margin-bottom:10px"><option value="">All months</option></select>
-    <div class="table-scroll"><table id="txntbl"><thead><tr><th>Date</th><th>Merchant</th><th>Card</th><th>Category</th><th class="num">NOK</th></tr></thead><tbody></tbody></table></div>
+
+<div class="panel">
+  <div class="ph"><span>MONTHLY PROGRESS — TOTAL CARD SPEND</span><span style="text-transform:none;letter-spacing:0">▼ ned / ▲ opp vs forrige måned</span></div>
+  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+    <div style="position:relative;height:280px;min-width:0"><canvas id="monProgress"></canvas></div>
+    <div id="progress-list" style="max-height:280px;overflow:auto;font-size:.85rem"></div>
   </div>
+</div>
+
+<div class="panel">
+  <div class="ph"><span>CATEGORIES BY MONTH — TOP 6 STACKED</span></div>
+  <div style="position:relative;height:300px;min-width:0"><canvas id="monCatChart"></canvas></div>
+  <div class="ph" style="margin-top:18px"><span>HEAT MAP — TOP 10 (values in 1000-kr)</span></div>
+  <div class="table-scroll" id="heatmap"></div>
+</div>
+
 </div>
 <div class="panel read" id="read"></div>
 <footer>AES-256-GCM · passphrase never leaves this device · Frøya / household money ops</footer>
@@ -146,59 +157,85 @@ new Chart(document.getElementById('sp-cons'),{type:'line',data:{labels:D.months.
 
 document.getElementById('read').innerHTML=D.narrative;
 
-// ---- Category slicing ----
+// ---- Category slicing (monthly progress) ----
 const TX=D.transactions||[];
-const CAT_COLORS=['#a78bfa','#2dd4bf','#fbbf24','#fb7185','#34d399','#60a5fa','#f472b6','#c084fc','#4ade80','#f97316','#38bdf8','#e879f9','#facc15','#2dd4bf','#a3e635'];
-let activeCats=new Set(),activeMonth='';
+const CAT_COLORS=['#a78bfa','#2dd4bf','#fbbf24','#fb7185','#34d399','#60a5fa','#f472b6','#c084fc','#4ade80','#f97316','#38bdf8','#e879f9','#facc15','#22d3ee','#a3e635'];
+const dateKey=d=>{const p=d.split('.');const y=p[2].length===2?'20'+p[2]:p[2];return y+'-'+p[1]+'-'+p[0];};
+const monthOf=d=>dateKey(d).slice(0,7);
+let activeCats=new Set();
 const catAgg={};TX.forEach(t=>catAgg[t.category]=(catAgg[t.category]||0)+t.amount);
 const catsSorted=Object.keys(catAgg).sort((a,b)=>catAgg[b]-catAgg[a]);
 const txTotal=catsSorted.reduce((s,c)=>s+catAgg[c],0);
-document.getElementById('slice-total').textContent='total '+fmt(txTotal)+' · '+TX.length+' transaksjoner';
-
-function dateKey(d){const p=d.split('.');return '20'+p[2]+'-'+p[1]+'-'+p[0];}
-function monthOf(d){return dateKey(d).slice(0,7);}
-function cleanMerchant(s){return s.replace(/\s+\d{6}\*+\d{4}.*$/,'').replace(/\s+-?\d+[.,]\d{2} [A-Z]{3}.*$/,'').trim();}
-const monthsSet=[...new Set(TX.map(t=>monthOf(t.date)))].sort();
-monthsSet.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;document.getElementById('monthSel').appendChild(o);});
-
-let catChart;
-function filteredTx(){
- const q=document.getElementById('slice-q').value.toLowerCase();
- return TX.filter(t=>(!activeCats.size||activeCats.has(t.category))&&(!activeMonth||monthOf(t.date)===activeMonth)&&(!q||t.category.toLowerCase().includes(q)));
-}
+const allMonths=[...new Set(TX.map(t=>monthOf(t.date)))].sort();
+document.getElementById('slice-total').textContent='total '+fmt(txTotal)+' · '+TX.length+' transaksjoner · '+allMonths.length+' måneder';
+function filteredTx(){const q=document.getElementById('slice-q').value.toLowerCase();return TX.filter(t=>(!activeCats.size||activeCats.has(t.category))&&(!q||t.category.toLowerCase().includes(q)));}
+function col(k){return CAT_COLORS[catsSorted.indexOf(k)%CAT_COLORS.length];}
+let catChart,monCatChartInst=null;
 function renderSlice(){
  const ft=filteredTx();
  const agg={};ft.forEach(t=>agg[t.category]=(agg[t.category]||0)+t.amount);
  const keys=Object.keys(agg).sort((a,b)=>agg[b]-agg[a]);
- const col=k=>CAT_COLORS[catsSorted.indexOf(k)%CAT_COLORS.length];
  if(catChart)catChart.destroy();
  catChart=new Chart(document.getElementById('catChart'),{type:'bar',data:{
   labels:keys,datasets:[{data:keys.map(k=>agg[k]),backgroundColor:keys.map(col),borderRadius:7,maxBarThickness:24}]},
-  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)+' ('+(c.raw/txTotal*100).toFixed(1)+'% av totalt)'}}},
+  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)+' ('+(c.raw/txTotal*100).toFixed(1)+'%)'}}},
   scales:{x:{ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#c9d1d9',font:{weight:600}},grid:{display:false}}}}});
- // list with toggles
  document.getElementById('cat-list').innerHTML=catsSorted.map(c=>{
-  const on=!activeCats.size||activeCats.has(c);
   const dim=activeCats.size&&!activeCats.has(c);
-  return `<div class="catrow" data-cat="${c}" style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:9px;cursor:pointer;opacity:${dim?'.35':'1'};background:${on&&activeCats.has(c)?'rgba(167,139,250,.12)':'transparent'}">
+  return `<div class="catrow" data-cat="${c}" style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:9px;cursor:pointer;opacity:${dim?'.35':'1'};background:${activeCats.has(c)?'rgba(167,139,250,.12)':'transparent'}">
    <span><span class="legend-swatch" style="background:${col(c)}"></span>${c}</span>
-   <strong style="font-variant-numeric:tabular-nums">${fmt((catAgg[c]||0))}</strong></div>`;
+   <strong style="font-variant-numeric:tabular-nums">${fmt(catAgg[c]||0)}</strong></div>`;
  }).join('');
  document.querySelectorAll('.catrow').forEach(el=>el.addEventListener('click',()=>{
   const c=el.dataset.cat;
   if(activeCats.has(c))activeCats.delete(c);else activeCats.add(c);
   if(activeCats.size===catsSorted.length)activeCats.clear();
-  renderSlice();
+  renderSlice();renderMonthly();
  }));
- // transactions
- document.getElementById('txn-count').textContent=`· ${ft.length}`;
- document.getElementById('txn-filter-info').textContent=fmt(ft.reduce((s,t)=>s+t.amount,0));
- document.querySelector('#txntbl tbody').innerHTML=[...ft].sort((a,b)=>dateKey(b.date).localeCompare(dateKey(a.date))||b.amount-a.amount).slice(0,400).map(t=>
-  `<tr><td style="color:var(--muted);white-space:nowrap">${t.date}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cleanMerchant(t.desc)}</td><td style="color:var(--muted)">${t.source}</td><td><span class="cat-chip" style="background:${col(t.category)}22;color:${col(t.category)}">${t.category}</span></td><td class="num">${fmt(t.amount)}</td></tr>`).join('');
 }
-document.getElementById('slice-q').addEventListener('input',renderSlice);
-document.getElementById('monthSel').addEventListener('change',e=>{activeMonth=e.target.value;renderSlice();});
-renderSlice();
+// ---- Monthly progress: total per month + delta vs previous ----
+(function(){
+ const mAgg={};TX.forEach(t=>mAgg[monthOf(t.date)]=(mAgg[monthOf(t.date)]||0)+t.amount);
+ const ms=allMonths,mv=ms.map(m=>mAgg[m]);
+ const deltas=mv.map((v,i)=>i? v-mv[i-1]:null);
+ new Chart(document.getElementById('monProgress'),{data:{labels:ms,datasets:[
+  {type:'bar',label:'Total',data:mv,backgroundColor:'rgba(45,212,191,.75)',borderRadius:7,maxBarThickness:42},
+  {type:'line',label:'Trend',data:mv,borderColor:'#e6edf3',borderWidth:1.5,pointRadius:0,tension:.35}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+  scales:{y:{ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#8b949e'},grid:{display:false}}}}});
+ document.getElementById('progress-list').innerHTML=ms.map((m,i)=>{const d=deltas[i];
+  return `<div style="display:flex;justify-content:space-between;padding:8px 10px;border-radius:9px">
+   <span>${m}</span><span style="display:flex;gap:14px"><strong style="font-variant-numeric:tabular-nums">${fmt(mv[i])}</strong>
+   ${d===null?'<span style="color:#59626e">–</span>':`<span class="delta" style="color:${d<=0?'#34d399':'#fb7185'}">${d<=0?'▼':'▲'} ${fmt(Math.abs(d))}</span>`}</span></div>`;}).join('');
+})();
+// ---- Category by month: stacked bars + heat matrix ----
+let monCatChartBuilt=false;
+function renderMonthly(){
+ try {
+ const ft=filteredTx();
+ const use=catsSorted.slice(0,6).filter(c=>!activeCats.size||!activeCats.has(c)||true);
+ const datasets=catsSorted.slice(0,6).map(c=>({label:c,data:allMonths.map(m=>ft.filter(t=>monthOf(t.date)===m&&t.category===c).reduce((s,t)=>s+t.amount,0)),backgroundColor:col(c),borderRadius:4,stack:'s'}));
+ if(monCatChartInst)monCatChartInst.destroy();
+ monCatChartInst=new Chart(document.getElementById('monCatChart'),{type:'bar',data:{labels:allMonths,datasets},
+  options:{maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',boxWidth:11,font:{size:10}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.raw)}}},
+  scales:{x:{stacked:true,ticks:{color:'#8b949e'},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}}}}});
+ const top=catsSorted.slice(0,10);
+ let maxV=1;top.forEach(c=>allMonths.forEach(m=>{const v=ft.filter(t=>monthOf(t.date)===m&&t.category===c).reduce((s,t)=>s+t.amount,0);if(v>maxV)maxV=v;}));
+ let h='<table id="heat"><thead><tr><th style="text-align:left">Category</th>'+allMonths.map(m=>`<th class="num">${m.slice(5)}/${m.slice(2,4)}</th>`).join('')+'<th class="num">Σ</th></tr></thead><tbody>';
+ top.forEach(c=>{
+  h+=`<tr><td style="white-space:nowrap"><span class="legend-swatch" style="background:${col(c)}"></span>${c}</td>`;
+  let sum=0;
+  allMonths.forEach(m=>{const v=ft.filter(t=>monthOf(t.date)===m&&t.category===c).reduce((s,t)=>s+t.amount,0);sum+=v;
+   const a=v/maxV*.85+.03;
+   h+=`<td class="num" style="background:rgba(167,139,250,${a.toFixed(2)})" title="${c} ${m}: ${fmt(v)}">${v?Math.round(v/1000):''}</td>`;});
+  h+=`<td class="num"><strong>${fmt(sum)}</strong></td></tr>`;
+ });
+ h+='</tbody></table>';
+ document.getElementById('heatmap').innerHTML=h;
+ } catch(e) { document.getElementById('heatmap').textContent='Render error: '+e.message; console.error(e); }
+}
+document.getElementById('slice-q').addEventListener('input',()=>{renderSlice();renderMonthly();});
+renderSlice();renderMonthly();
 
 })();
 </script>
