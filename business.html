@@ -6,97 +6,151 @@
 <title>Fornvegr ENK — Business Dashboard 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:24px}
-  h1{font-size:1.5rem;margin-bottom:4px}
-  .sub{color:var(--muted);font-size:.85rem;margin-bottom:20px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
-  .card h3{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
-  .big{font-size:1.6rem;font-weight:700}
-  .green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:800px){.row2{grid-template-columns:1fr}}
-  .chartbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
-  table{width:100%;border-collapse:collapse;font-size:.88rem}
-  th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase}
-  td{padding:8px 10px;border-bottom:1px solid #21262d}
-  tr:last-child td{border-bottom:none}
-  .num{text-align:right;font-variant-numeric:tabular-nums}
-  .assets li{margin:6px 0 6px 18px;font-size:.92rem}
+:root{--bg:#07090f;--card:rgba(255,255,255,.035);--border:rgba(255,255,255,.09);--text:#e6edf3;--muted:#8b949e;--accent:#2dd4bf;--accent2:#a78bfa;--green:#34d399;--red:#fb7185;--yellow:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);background-image:radial-gradient(1100px 500px at 10% -10%,rgba(45,212,191,.09),transparent 60%),radial-gradient(900px 450px at 95% 105%,rgba(139,92,246,.1),transparent 60%);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:28px 24px 60px;max-width:1180px;margin:0 auto}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+h1{font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
+h1 .thin{color:var(--muted);font-weight:400}
+.sub{color:var(--muted);font-size:.8rem;margin-top:4px}
+.pill{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#9ca8ba;border:1px solid var(--border);border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.03);white-space:nowrap}
+.pill .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-right:7px;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.4}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-bottom:16px}
+.card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px 18px 16px;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:rgba(45,212,191,.35)}
+.card h3{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.big{font-size:1.65rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.spark{margin-top:10px;height:30px}
+.card::after{content:'';position:absolute;width:120px;height:120px;border-radius:50%;filter:blur(55px);pointer-events:none;background:rgba(45,212,191,.12);top:-60px;right:-40px}
+.card.c2::after{background:rgba(52,211,153,.12)}
+.card.c3::after{background:rgba(167,139,250,.13)}
+.card.c4::after{background:rgba(251,191,36,.13)}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.purple{color:var(--accent2)}.teal{color:var(--accent)}
+.delta{font-size:.72rem;font-weight:600;margin-left:8px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06)}
+.row2{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+@media(max-width:860px){.row2{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px}
+.panel h3,.ph{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;cursor:pointer;user-select:none}
+th:hover{color:var(--text)}
+td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+tr:last-child td{border-bottom:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.cat-chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.7rem;font-weight:600;background:rgba(45,212,191,.12);color:var(--accent)}
+.bar-wrap{height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:6px}
+.bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease}
+.assets li{list-style:none;display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.9rem}
+.assets li:last-child{border:none}
+.assets small{color:var(--muted);display:block;font-size:.74rem;margin-top:2px}
+.search{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);font-size:.85rem;outline:none;margin-bottom:12px}
+.search:focus{border-color:var(--accent)}
+footer{text-align:center;color:#59626e;font-size:.72rem;margin-top:34px;letter-spacing:.04em}
 </style>
 </head>
 <body>
-<h1>🪙 Fornvegr ENK — 2026</h1>
-<div class="sub">Business dashboard · auto-generated from expenses/income/assets registers · updated <span id="gen"></span></div>
+<header>
+  <div><h1>🪙 Fornvegr ENK <span class="thin">— 2026</span></h1><div class="sub">Business dashboard · decrypted locally · updated <span id="gen"></span></div></div>
+  <div class="pill"><span class="dot"></span>LIVE REGISTER</div>
+</header>
 
 <div class="grid">
-  <div class="card"><h3>Flagged costs YTD</h3><div class="big" id="k-exp">—</div></div>
-  <div class="card"><h3>Registered income YTD</h3><div class="big" id="k-inc">—</div></div>
-  <div class="card"><h3>Fixed assets</h3><div class="big" id="k-assets">—</div></div>
-  <div class="card"><h3>MVA threshold (50k)</h3><div class="big" id="k-mva">—</div></div>
+  <div class="card"><h3>Flagged costs YTD <span id="d-exp"></span></h3><div class="big teal" id="k-exp">—</div><div class="spark"><canvas id="sp-exp"></canvas></div></div>
+  <div class="card c2"><h3>Registered income YTD</h3><div class="big green" id="k-inc">—</div><div class="bar-wrap"><div class="bar-fill" id="mva-bar" style="width:0%"></div></div><small style="color:var(--muted);font-size:.7rem;display:block;margin-top:6px" id="k-inc-sub"></small></div>
+  <div class="card c3"><h3>Fixed assets (depreciable)</h3><div class="big purple" id="k-assets">—</div><small style="color:var(--muted);font-size:.72rem;display:block;margin-top:8px" id="k-asset-sub"></small></div>
+  <div class="card c4"><h3>MVA threshold — 50 000 kr</h3><div class="big" id="k-mva">—</div><small style="color:var(--muted);font-size:.72rem;display:block;margin-top:8px" id="k-mva-sub"></small></div>
 </div>
 
-<div class="chartbox"><canvas id="catChart" height="90"></canvas></div>
+<div class="panel"><div class="ph"><span>COST BY CATEGORY</span><span style="text-transform:none;letter-spacing:0" id="cat-total"></span></div><canvas id="catChart" height="110"></canvas></div>
 
 <div class="row2">
-  <div class="chartbox"><h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">MONTHLY BUSINESS SPEND</h3><canvas id="monChart" height="180"></canvas></div>
-  <div class="chartbox">
-    <h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">FIXED ASSETS (depreciable)</h3>
-    <ul class="assets" id="assetList"></ul>
-  </div>
+  <div class="panel"><div class="ph"><span>MONTHLY BURN</span><span style="text-transform:none;letter-spacing:0" id="mon-avg"></span></div><canvas id="monChart" height="200"></canvas></div>
+  <div class="panel"><div class="ph"><span>FIXED ASSETS</span></div><ul class="assets" id="assetList"></ul></div>
 </div>
 
-<div class="chartbox">
-  <h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">ALL FLAGGED EXPENSES</h3>
-  <table id="exptable"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th class="num">NOK</th></tr></thead><tbody></tbody></table>
+<div class="panel">
+  <div class="ph"><span>ALL FLAGGED EXPENSES <span id="exp-count" style="text-transform:none;letter-spacing:0"></span></span></div>
+  <input class="search" id="q" type="search" placeholder="Search description or category…">
+  <table id="exptable"><thead><tr><th data-k="date">Date ▾</th><th data-k="description">Description</th><th data-k="category">Category</th><th class="num" data-k="amount">NOK</th></tr></thead><tbody></tbody></table>
 </div>
+
+<footer>AES-256-GCM · passphrase never leaves this device · Frøya / Fornvegr money ops</footer>
 
 <script src="auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-gradient@0"></script>
 <script>
+const fmt=n=>n.toLocaleString('nb-NO',{maximumFractionDigits:0})+' kr';
+const fmtk=n=>n>=1000?(n/1000).toLocaleString('nb-NO',{maximumFractionDigits:n>=100000?0:1})+'k':fmt(n);
+let EXPENSES=[],sortK='date',sortDir=-1;
+
 (async()=>{
-const DATA = await unlockData('business.enc');
-document.getElementById('gen').textContent = DATA.generated;
+const DATA=await unlockData('business.enc');
+document.getElementById('gen').textContent=DATA.generated;
+EXPENSES=[...DATA.expenses];
 
-// KPIs
-const expTotal = DATA.expenses.reduce((s,r)=>s+r.amount,0);
-const incTotal = DATA.income.reduce((s,r)=>s+r.gross,0);
-const assetTotal = DATA.assets.reduce((s,r)=>s+r.cost,0);
-document.getElementById('k-exp').textContent = fmt(expTotal);
-document.getElementById('k-inc').textContent = fmt(incTotal) || '0';
-document.getElementById('k-inc').className = 'big ' + (incTotal>0?'green':'');
-document.getElementById('k-assets').textContent = fmt(assetTotal);
-const mvaEl = document.getElementById('k-mva');
-if (incTotal >= 50000){ mvaEl.textContent='BREACHED — register!'; mvaEl.className='big red'; }
-else { const pct=Math.round(incTotal/50000*100); mvaEl.textContent=pct+'% of 50k'; mvaEl.className='big yellow'; }
+// ---- KPIs ----
+const expTotal=DATA.expenses.reduce((s,r)=>s+r.amount,0);
+const incTotal=DATA.income.reduce((s,r)=>s+r.gross,0);
+const assetTotal=DATA.assets.reduce((s,r)=>s+r.cost,0);
+document.getElementById('k-exp').textContent=fmt(expTotal);
+document.getElementById('k-inc').textContent=incTotal?fmt(incTotal):'0 kr';
+document.getElementById('k-assets').textContent=fmt(assetTotal);
+document.getElementById('k-asset-sub').textContent=DATA.assets.length+' registrert'+(DATA.assets.length===1?'':'e');
 
-function fmt(n){return n.toLocaleString('nb-NO',{maximumFractionDigits:0})+' kr'}
+// income vs MVA progress bar
+document.getElementById('mva-bar').style.width=Math.min(incTotal/50000*100,100)+'%';
+document.getElementById('k-inc-sub').textContent=(incTotal/50000*100).toFixed(1)+'% av MVA-grensen';
 
-// Category donut
+// MVA card
+const mvaEl=document.getElementById('k-mva');
+if(incTotal>=50000){mvaEl.textContent='BREACHED';mvaEl.className='big red';document.getElementById('k-mva-sub').textContent='⚠ Registrer deg i MVA-registeret nå';}
+else{const rem=50000-incTotal;mvaEl.className='big yellow';mvaEl.textContent=(incTotal/50000*100).toFixed(0)+'%';document.getElementById('k-mva-sub').textContent=fmt(rem)+' gjenstår til grensen';}
+
+// ---- sparkline in KPI card ----
+const byMon={}; DATA.expenses.forEach(r=>{const m=r.date.slice(0,7);byMon[m]=(byMon[m]||0)+r.amount});
+const mkeys=Object.keys(byMon).sort();
+new Chart(document.getElementById('sp-exp'),{type:'line',data:{labels:mkeys,datasets:[{data:mkeys.map(m=>byMon[m]),borderColor:'#2dd4bf',borderWidth:2,pointRadius:0,fill:true,tension:.4}]},options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},elements:{resizeDelay:100}}});
+
+// ---- category horizontal bars ----
 const cats={}; DATA.expenses.forEach(r=>cats[r.category]=(cats[r.category]||0)+r.amount);
+const cKeys=Object.keys(cats).sort((a,b)=>cats[b]-cats[a]);
+document.getElementById('cat-total').textContent='total '+fmt(Object.values(cats).reduce((a,b)=>a+b,0));
 new Chart(document.getElementById('catChart'),{type:'bar',data:{
- labels:Object.keys(cats),
- datasets:[{label:'NOK',data:Object.values(cats),backgroundColor:'#58a6ff',borderRadius:4}]},
- options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmt(v),color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#e6edf3'},grid:{display:false}}}}});
+ labels:cKeys,
+ datasets:[{label:'NOK',data:cKeys.map(k=>cats[k]),backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,ctx.chart.width,0);g.addColorStop(0,'#2dd4bf');g.addColorStop(1,'#a78bfa');return g},borderRadius:8,maxBarThickness:26}]},
+ options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#c9d1d9',font:{weight:600}},grid:{display:false}}}}});
 
-// Monthly bars
-const mons={}; DATA.expenses.forEach(r=>{const m=r.date.slice(0,7);mons[m]=(mons[m]||0)+r.amount});
-const mkeys=Object.keys(mons).sort();
+// ---- monthly burn ----
+document.getElementById('mon-avg').textContent='snitt '+fmt(expTotal/Math.max(mkeys.length,1))+'/mnd';
 new Chart(document.getElementById('monChart'),{type:'bar',data:{
- labels:mkeys,datasets:[{data:mkeys.map(m=>mons[m]),backgroundColor:'#3fb950',borderRadius:4}]},
- options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v),color:'#8b949e'},grid:{color:'#21262d'}},x:{ticks:{color:'#8b949e'},grid:{display:false}}}}});
+ labels:mkeys.map(m=>m.slice(5)+'/'+m.slice(2,4)),datasets:[{data:mkeys.map(m=>byMon[m]),backgroundColor:mkeys.map((_,i)=>`hsl(${172+i*22} 65% ${48+i*3}%)`),borderRadius:8,maxBarThickness:44}]},
+ options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#8b949e'},grid:{display:false}}}}});
 
-// Assets list
+// ---- assets ----
 const ul=document.getElementById('assetList');
-DATA.assets.forEach(a=>{ul.innerHTML+=`<li>${a.asset} — <strong>${fmt(a.cost)}</strong> <span style="color:var(--muted)">(${a.date}, ${a.depreciation_years}-yr)</span></li>`});
+DATA.assets.sort((a,b)=>b.cost-a.cost).forEach(a=>{
+ ul.innerHTML+=`<li><span>${a.asset}<small>${a.date} · ${a.depreciation_years}-års avskrivning</small></span><strong>${fmt(a.cost)}</strong></li>`});
+if(!DATA.assets.length) ul.innerHTML='<li style="color:var(--muted)">Ingen aktiva registrert ennå.</li>';
 
-// Expense table
-const tb=document.querySelector('#exptable tbody');
-[...DATA.expenses].sort((a,b)=>b.date.localeCompare(a.date)).forEach(r=>{
- tb.innerHTML+=`<tr><td>${r.date}</td><td>${r.description}</td><td style="color:var(--muted)">${r.category}</td><td class="num">${fmt(r.amount)}</td></tr>`;
-});
+renderTable();
 })();
+
+function renderTable(){
+ const q=document.getElementById('q').value.toLowerCase();
+ let rows=EXPENSES.filter(r=>!q||r.description.toLowerCase().includes(q)||r.category.toLowerCase().includes(q));
+ rows.sort((a,b)=>typeof a[sortK]==='number'? (a[sortK]-b[sortK])*sortDir : a[sortK].localeCompare(b[sortK])*sortDir);
+ document.getElementById('exp-count').textContent=`· ${rows.length} rader`;
+ document.querySelector('#exptable tbody').innerHTML=rows.map(r=>
+  `<tr><td style="color:var(--muted);white-space:nowrap">${r.date}</td><td>${r.description}</td><td><span class="cat-chip">${r.category}</span></td><td class="num">${fmt(r.amount)}</td></tr>`).join('');
+}
+document.getElementById('q').addEventListener('input',renderTable);
+document.querySelectorAll('#exptable th').forEach(th=>th.addEventListener('click',()=>{
+ if(sortK===th.dataset.k)sortDir*=-1;else{sortK=th.dataset.k;sortDir=-1}
+ renderTable();
+}));
 </script>
 </body>
 </html>

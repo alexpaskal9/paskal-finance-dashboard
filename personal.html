@@ -6,70 +6,128 @@
 <title>Husholdning — Personal Finance Dashboard 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:24px}
-  h1{font-size:1.5rem;margin-bottom:4px}
-  .sub{color:var(--muted);font-size:.85rem;margin-bottom:20px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
-  .card h3{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
-  .big{font-size:1.6rem;font-weight:700}
-  .green{color:var(--green)}.red{color:var(--red)}
-  table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:6px}
-  th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase}
-  td{padding:8px 10px;border-bottom:1px solid #21262d}
-  tr:last-child td{border-bottom:none}
-  .num{text-align:right;font-variant-numeric:tabular-nums}
-  .chartbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+:root{--bg:#07090f;--card:rgba(255,255,255,.035);--border:rgba(255,255,255,.09);--text:#e6edf3;--muted:#8b949e;--accent:#a78bfa;--accent2:#2dd4bf;--green:#34d399;--red:#fb7185}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);background-image:radial-gradient(1100px 500px at 12% -10%,rgba(139,92,246,.1),transparent 60%),radial-gradient(900px 450px at 92% 108%,rgba(45,212,191,.09),transparent 60%);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;padding:28px 24px 60px;max-width:1180px;margin:0 auto}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+h1{font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
+h1 .thin{color:var(--muted);font-weight:400}
+.sub{color:var(--muted);font-size:.8rem;margin-top:4px}
+.pill{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#9ca8ba;border:1px solid var(--border);border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.03);white-space:nowrap}
+.pill .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);margin-right:7px;animation:pulse 2s infinite}
+.pill.ok .dot{background:var(--green);box-shadow:0 0 8px var(--green)}
+@keyframes pulse{50%{opacity:.4}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-bottom:16px}
+.card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px 18px 16px;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:rgba(167,139,250,.4)}
+.card h3{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px;display:flex;justify-content:space-between}
+.big{font-size:1.65rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.spark{margin-top:10px;height:30px}
+.card::after{content:'';position:absolute;width:120px;height:120px;border-radius:50%;filter:blur(55px);pointer-events:none;background:rgba(167,139,250,.13);top:-60px;right:-40px}
+.card.c2::after{background:rgba(251,113,133,.13)}
+.card.c3::after{background:rgba(45,212,191,.12)}
+.card.c4::after{background:rgba(52,211,153,.13)}
+.green{color:var(--green)}.red{color:var(--red)}.purple{color:var(--accent)}.teal{color:var(--accent2)}
+.row2{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+@media(max-width:860px){.row2{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px}
+.ph{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.66rem;text-transform:uppercase;letter-spacing:.07em}
+td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+tr:last-child td{border-bottom:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:700;border-top:1px solid var(--border)}
+.read{color:#c9d1d9;font-size:.88rem;line-height:1.8}
+.read strong{color:var(--text)}
+.legend-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+footer{text-align:center;color:#59626e;font-size:.72rem;margin-top:34px;letter-spacing:.04em}
 </style>
 </head>
 <body>
-<h1>🏠 Husholdning — 2025/2026</h1>
-<div class="sub">Personal finance · card consumption & interest · updated <span id="gen"></span></div>
+<header>
+  <div><h1>🏠 Husholdning <span class="thin">— kort &amp; rente</span></h1><div class="sub">Personal finance · card consumption &amp; interest · updated <span id="gen"></span></div></div>
+  <div class="pill" id="statusPill"><span class="dot"></span><span id="statusTxt">INTEREST WATCH</span></div>
+</header>
 
 <div class="grid">
-  <div class="card"><h3>Card consumption (known months)</h3><div class="big" id="k-cons">—</div></div>
-  <div class="card"><h3>Credit-card interest paid</h3><div class="big" id="k-int">—</div></div>
-  <div class="card"><h3>Avg monthly burn (cards)</h3><div class="big" id="k-avg">—</div></div>
-  <div class="card"><h3>Interest target</h3><div class="big green">0 kr</div></div>
+  <div class="card"><h3>Card consumption (known months)</h3><div class="big purple" id="k-cons">—</div><div class="spark"><canvas id="sp-cons"></canvas></div></div>
+  <div class="card c2"><h3>Credit-card interest paid</h3><div class="big" id="k-int">—</div><small style="color:var(--muted);font-size:.72rem;display:block;margin-top:8px" id="k-int-sub"></small></div>
+  <div class="card c3"><h3>Avg monthly burn (cards)</h3><div class="big teal" id="k-avg">—</div><small style="color:var(--muted);font-size:.72rem;display:block;margin-top:8px" id="k-avg-sub"></small></div>
+  <div class="card c4"><h3>Interest target</h3><div class="big green">0 kr</div><small style="color:var(--muted);font-size:.72rem;display:block;margin-top:8px" id="k-target-sub"></small></div>
 </div>
 
-<div class="chartbox"><canvas id="monChart" height="100"></canvas></div>
+<div class="panel"><div class="ph"><span>MONTHLY CARD CONSUMPTION — STACKED BY ISSUER</span><span style="text-transform:none;letter-spacing:0"><span class="legend-swatch" style="background:#a78bfa"></span>SAS&nbsp;&nbsp;<span class="legend-swatch" style="background:#fbbf24"></span>Bank Norwegian</span></div><canvas id="monChart" height="130"></canvas></div>
 
-<div class="chartbox">
-<h3 style="color:var(--muted);font-size:.75rem;margin-bottom:10px">MONTHLY CARD SUMMARY</h3>
-<table id="tbl"><thead><tr><th>Month</th><th class="num">SAS card</th><th class="num">SAS interest</th><th class="num">Bank Norw.</th><th class="num">BN interest</th><th class="num">Known total</th></tr></thead><tbody></tbody></table>
+<div class="row2">
+  <div class="panel">
+    <div class="ph"><span>MONTHLY CARD SUMMARY</span></div>
+    <table id="tbl"><thead><tr><th>Month</th><th class="num">SAS card</th><th class="num">SAS int.</th><th class="num">BN card</th><th class="num">BN int.</th><th class="num">Total</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
+  </div>
+  <div class="panel">
+    <div class="ph"><span>INTEREST BY MONTH</span><span style="text-transform:none;letter-spacing:0" id="int-total-lbl"></span></div>
+    <canvas id="intChart" height="220"></canvas>
+  </div>
 </div>
 
-<div class="chartbox" style="color:var(--muted);font-size:.85rem;line-height:1.7" id="read"></div>
+<div class="panel read" id="read"></div>
+<footer>AES-256-GCM · passphrase never leaves this device · Frøya / household money ops</footer>
 
 <script src="auth.js"></script>
 <script>
+const fmt=n=>n.toLocaleString('nb-NO',{maximumFractionDigits:0})+' kr';
+const fmtk=n=>n>=1000?(n/1000).toLocaleString('nb-NO',{maximumFractionDigits:n>=100000?0:1})+'k':fmt(n);
+
 (async()=>{
-const D = await unlockData('personal.enc');
-document.getElementById('gen').textContent = D.generated;
-function fmt(n){return n.toLocaleString('nb-NO',{maximumFractionDigits:0})+' kr'}
+const D=await unlockData('personal.enc');
+document.getElementById('gen').textContent=D.generated;
 
-const cons = D.months.reduce((s,m)=>s+m.total,0);
-const interest = D.months.reduce((s,m)=>s+(m.sas_int||0)+(m.bn_int||0),0);
-document.getElementById('k-cons').textContent = fmt(cons);
-document.getElementById('k-int').textContent = fmt(interest);
-document.getElementById('k-int').className = 'big ' + (interest>0?'red':'green');
-document.getElementById('k-avg').textContent = fmt(cons/D.months.length);
+const cons=D.months.reduce((s,m)=>s+m.total,0);
+const interest=D.months.reduce((s,m)=>s+(m.sas_int||0)+(m.bn_int||0),0);
+const avg=cons/D.months.length;
+document.getElementById('k-cons').textContent=fmt(cons);
+document.getElementById('k-int').textContent=fmt(interest);
+document.getElementById('k-int').className='big '+(interest>0?'red':'green');
+document.getElementById('k-int-sub').textContent='target is zero — '+fmt(interest)+' over target so far';
+document.getElementById('k-avg').textContent=fmt(avg);
+document.getElementById('k-target-sub').textContent=D.months.length+' måneder i registeret';
+// status pill
+const lastInt=(D.months[D.months.length-1]?.sas_int||0)+(D.months[D.months.length-1]?.bn_int||0);
+const pill=document.getElementById('statusPill'),st=document.getElementById('statusTxt');
+if(lastInt>0){pill.classList.remove('ok');st.textContent='INTEREST LAST MONTH';}
+else{pill.classList.add('ok');st.textContent='ZERO INTEREST STREAK';}
 
+// stacked monthly chart + trend line for total
 new Chart(document.getElementById('monChart'),{type:'bar',data:{
  labels:D.months.map(m=>m.month),
  datasets:[
-  {label:'SAS card',data:D.months.map(m=>m.sas||0),backgroundColor:'#58a6ff',borderRadius:3},
-  {label:'Bank Norwegian',data:D.months.map(m=>m.bn||0),backgroundColor:'#d29922',borderRadius:3}]},
- options:{plugins:{legend:{labels:{color:'#8b949e'}}},scales:{x:{stacked:true,ticks:{color:'#8b949e'},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v),color:'#8b949e'},grid:{color:'#21262d'}}}}});
+  {label:'SAS',data:D.months.map(m=>m.sas||0),backgroundColor:'rgba(167,139,250,.85)',borderRadius:{topLeft:6,topRight:6},stack:'s'},
+  {label:'BN',data:D.months.map(m=>m.bn||0),backgroundColor:'rgba(251,191,36,.85)',stack:'s'},
+  {label:'Total trend',type:'line',data:D.months.map(m=>m.total),borderColor:'#2dd4bf',borderWidth:2,pointRadius:2,tension:.35,fill:false}]},
+ options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.raw)}}},
+ scales:{x:{stacked:true,ticks:{color:'#8b949e'},grid:{display:false}},y:{stacked:false,ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}}}}});
 
+// interest bars (only months with interest show)
+const im=D.months.filter(m=>(m.sas_int||0)+(m.bn_int||0)>0);
+document.getElementById('int-total-lbl').textContent='total '+fmt(interest);
+new Chart(document.getElementById('intChart'),{type:'bar',data:{
+ labels:im.map(m=>m.month),datasets:[{data:im.map(m=>(m.sas_int||0)+(m.bn_int||0)),backgroundColor:'rgba(251,113,133,.8)',borderRadius:6,maxBarThickness:38}]},
+ options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)+' rente'}}},
+ scales:{y:{ticks:{callback:v=>fmtk(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#8b949e'},grid:{display:false}}}}});
+if(!im.length) document.querySelector('#intChart').parentElement.innerHTML='<div class="ph">INTEREST BY MONTH</div><p style="color:var(--green);padding:30px 0;text-align:center">✓ Zero interest in the entire register. Keep it there.</p>';
+
+// table with totals footer
 const tb=document.querySelector('#tbl tbody');
 D.months.forEach(m=>{
- tb.innerHTML+=`<tr><td>${m.month}</td><td class="num">${fmt(m.sas||0)}</td><td class="num ${m.sas_int?'red':''}">${fmt(m.sas_int||0)}</td><td class="num">${fmt(m.bn||0)}</td><td class="num ${m.bn_int?'red':''}">${fmt(m.bn_int||0)}</td><td class="num"><strong>${fmt(m.total)}</strong></td></tr>`;
+ tb.innerHTML+=`<tr><td>${m.month}</td><td class="num">${fmt(m.sas||0)}</td><td class="num ${(m.sas_int||0)>0?'red':''}">${fmt(m.sas_int||0)}</td><td class="num">${fmt(m.bn||0)}</td><td class="num ${(m.bn_int||0)>0?'red':''}">${fmt(m.bn_int||0)}</td><td class="num"><strong>${fmt(m.total)}</strong></td></tr>`;
 });
-document.getElementById('read').innerHTML = D.narrative;
+document.querySelector('#tbl tfoot').innerHTML=`<tr><td>TOTAL</td><td class="num">${fmt(D.months.reduce((s,m)=>s+(m.sas||0),0))}</td><td class="num red">${fmt(D.months.reduce((s,m)=>s+(m.sas_int||0),0))}</td><td class="num">${fmt(D.months.reduce((s,m)=>s+(m.bn||0),0))}</td><td class="num red">${fmt(D.months.reduce((s,m)=>s+(m.bn_int||0),0))}</td><td class="num purple">${fmt(cons)}</td></tr>`;
+
+// sparkline consumption
+new Chart(document.getElementById('sp-cons'),{type:'line',data:{labels:D.months.map(m=>m.month),datasets:[{data:D.months.map(m=>m.total),borderColor:'#a78bfa',borderWidth:2,pointRadius:0,fill:true,tension:.4}]},options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});
+
+document.getElementById('read').innerHTML=D.narrative;
 })();
 </script>
 </body>
