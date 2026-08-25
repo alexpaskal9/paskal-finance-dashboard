@@ -95,8 +95,8 @@ document.getElementById('k-target-sub').textContent=D.months.length+' måneder i
 // status pill
 const lastInt=(D.months[D.months.length-1]?.sas_int||0)+(D.months[D.months.length-1]?.bn_int||0);
 const pill=document.getElementById('statusPill'),st=document.getElementById('statusTxt');
-if(lastInt>0){pill.classList.remove('ok');st.textContent='INTEREST LAST MONTH';}
-else{pill.classList.add('ok');st.textContent='ZERO INTEREST STREAK';}
+if(lastInt>0){pill.classList.remove('ok');st.textContent='INTEREST IN LATEST RECORD';}
+else{pill.classList.add('ok');st.textContent='LATEST RECORD: ZERO INTEREST';}
 
 // stacked monthly chart + trend line for total
 new Chart(document.getElementById('monChart'),{type:'bar',data:{
